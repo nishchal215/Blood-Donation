@@ -14,11 +14,13 @@ import android.view.MenuItem;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import com.example.blooddonation.Notification.Token;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.tabs.TabItem;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -44,12 +46,15 @@ public class MainActivity extends AppCompatActivity {
     FirebaseDatabase database = FirebaseDatabase.getInstance();
     DatabaseReference myRef = database.getReference();
 
+    FirebaseUser currentUser;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
         FirebaseInstanceId.getInstance().getInstanceId()
                 .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
@@ -63,10 +68,12 @@ public class MainActivity extends AppCompatActivity {
                         // Get new Instance ID token
                         String token = task.getResult().getToken();
 
+                        updateToken(token);
+
                         // Log and toast
 //                        String msg = getString(R.string.msg_token_fmt, token);
                         Log.d(TAG, token);
-                        Toast.makeText(MainActivity.this, token, Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(MainActivity.this, token, Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -109,6 +116,22 @@ public class MainActivity extends AppCompatActivity {
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
 
 
+
+    }
+
+    private void updateToken(String token) {
+
+        DatabaseReference tokens = FirebaseDatabase.getInstance().getReference("tokens");
+        Token token1 = new Token(token);
+        tokens.child(currentUser.getUid()).setValue(token1)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(!task.isSuccessful()){
+                            Toast.makeText(MainActivity.this, "Token cannot be generated.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
 
     }
 

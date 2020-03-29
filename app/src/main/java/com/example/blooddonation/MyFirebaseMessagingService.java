@@ -4,12 +4,22 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
+import com.example.blooddonation.Notification.Token;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.FirebaseMessagingService;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
-    private static final String TAG = "MyFirebaseMessagingServ";
+    private static final String TAG = "MyFirebaseMessagingService";
 
     public MyFirebaseMessagingService() {
     }
@@ -27,5 +37,27 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         // manage this apps subscriptions on the server side, send the
         // Instance ID token to your app server.
 //        sendRegistrationToServer(token);
+
+        updateToken(token);
+
     }
+
+    private void updateToken(String token) {
+
+        DatabaseReference tokens = FirebaseDatabase.getInstance().getReference("tokens");
+        Token token1 = new Token(token);
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        assert currentUser != null;
+        tokens.child(currentUser.getUid()).setValue(token1)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(!task.isSuccessful()){
+                            Toast.makeText(MyFirebaseMessagingService.this, "Token cannot be refreshed.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+
+    }
+
 }
